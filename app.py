@@ -24,6 +24,9 @@ from urllib.error import HTTPError
 
 import json
 import os
+from fbchat import Client
+from fbchat.models import *
+import facebook
 
 from flask import Flask
 from flask import request
@@ -42,6 +45,10 @@ def webhook():
 
     res = processRequest(req)
 
+    # graph = facebook.GraphAPI(access_token="EAACEdEose0cBAPPdSBLUTyYtTwXX8JxXh5D8mZCVlOanXMvehV7GUD04rwXaUmVKTc1vCypjUBFfXlOCp748GQNGTEoSh4YTDLzZBh4llLiOLi4P0niYs2JEeG0obgJCzJeORCxZBMvUFDAV2Lqqfmu6Tcqhfp2l8vCNIlXF1lPJHrdCO5qfDMWxMelujSBR9aB6ZBmRKAZDZD", version="2.1")
+    # graph.put_object(parent_object='me', connection_name='feed',message='Hello, world')
+
+
     res = json.dumps(res, indent=4)
     # print(res)
     r = make_response(res)
@@ -50,18 +57,52 @@ def webhook():
 
 
 def processRequest(req):
-    if req.get("result").get("action") != "yahooWeatherForecast":
-        return {}
-    baseurl = "https://query.yahooapis.com/v1/public/yql?"
-    yql_query = makeYqlQuery(req)
-    if yql_query is None:
-        return {}
-    yql_url = baseurl + urlencode({'q': yql_query}) + "&format=json"
-    result = urlopen(yql_url).read()
-    data = json.loads(result)
-    res = makeWebhookResult(data)
-    return res
+    action = req.get("result").get("action")
+    parameters = req.get("result").get("parameters")
+    res = {}
+    if action == "yahooWeatherForecast":
+        baseurl = "https://query.yahooapis.com/v1/public/yql?"
+        yql_query = makeYqlQuery(req)
+        if yql_query is None:
+            return {}
+        yql_url = baseurl + urlencode({'q': yql_query}) + "&format=json"
+        result = urlopen(yql_url).read()
+        data = json.loads(result)
+        res = makeWebhookResult(data)
+        return res
+    elif action == "input.LoiAMIS":
+        strErrorCode = parameters.get("LoiAMIS")
+        if strErrorCode == "HRMLoginFail":
+            res= "Không đăng nhập được vào hệ thống HRM. Anh/Chị làm theo hướng dẫn sau: http://kb.misa.com.vn/#knowledgeid=90"
+        elif strErrorCode == "LoginFail":
+            res= "Không đăng nhập được vào hệ thống AMIS. Anh/Chị làm theo hướng dẫn sau: http://kb.misa.com.vn/#knowledgeid=548"
+        else:
+            sendMsgtoUser('Có một khác hàng không hỗ trợ được')
+            res = "Em rất xin lỗi Anh (Chị) vấn đề này em chưa hỗ trợ được ạ. Anh (Chị) vui lòng gửi email tới support@misa.com.vn hoặc hỏi đáp trên http://forum.misa.com.vn/ giúp em nhé. Cám ơn anh chị ạ !"
 
+    elif action == "input.unknown":
+        sendMsgtoUser('Có một khác hàng không hỗ trợ được')
+        res = "Em rất xin lỗi Anh (Chị) vấn đề này em chưa hỗ trợ được ạ. Anh (Chị) vui lòng gửi email tới support@misa.com.vn hoặc hỏi đáp trên http://forum.misa.com.vn/ giúp em nhé. Cám ơn anh chị ạ !"
+
+    if len(res) > 0:
+        return makeWebhookResult1(res)
+    else:
+        return {}
+
+def sendMsgtoUser(msg):
+    thread_id = '100007842240328'
+    thread_type = ThreadType.USER
+    client = Client("0966880147", "mekiep")
+    client.send(Message(text=msg), thread_id=thread_id, thread_type=thread_type)
+
+def makeWebhookResult1(data):
+    return {
+        "speech": data,
+        "displayText": data,
+        # "data": data,
+        # "contextOut": [],
+        "source": "apiai-weather-webhook-sample"
+    }
 
 def makeYqlQuery(req):
     result = req.get("result")

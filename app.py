@@ -26,7 +26,7 @@ import json
 import os
 from fbchat import Client
 from fbchat.models import *
-import facebook
+import http.client
 
 from flask import Flask
 from flask import request
@@ -35,6 +35,7 @@ from flask import make_response
 # Flask app should start in global layout
 app = Flask(__name__)
 
+FANPAGE_TOKEN = 'EAAQhILYOQ08BABYVdqnAaqWQ4wrifzM6y86SKV9mWn4u6DtIOuBxZBBFwfceJSSpl5jZC0dFZA4hq7fcgZCKMyYkNzsvPrssLFEbZAPciXGMliOf7tYuzLpq8Y5o7ZA4T0zbnZCVktxOZBJ7ZBYciD86TcpcRfhUgZAZCGjI47i3PSs5A4PgAdYZCmpu'
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -45,32 +46,36 @@ def webhook():
 
     res = processRequest(req)
 
-    # graph = facebook.GraphAPI(access_token="EAACEdEose0cBAPPdSBLUTyYtTwXX8JxXh5D8mZCVlOanXMvehV7GUD04rwXaUmVKTc1vCypjUBFfXlOCp748GQNGTEoSh4YTDLzZBh4llLiOLi4P0niYs2JEeG0obgJCzJeORCxZBMvUFDAV2Lqqfmu6Tcqhfp2l8vCNIlXF1lPJHrdCO5qfDMWxMelujSBR9aB6ZBmRKAZDZD", version="2.1")
-    # graph.put_object(parent_object='me', connection_name='feed',message='Hello, world')
-
-
     res = json.dumps(res, indent=4)
-    # print(res)
     r = make_response(res)
     r.headers['Content-Type'] = 'application/json'
     return r
 
+def isContainKey(data,dic,value):
+    datas = data.split(";")
+    for item in datas:
+        if item not in dic:
+            return False
+        else:
+            dic = dic.get(item)
+    if value != "" and value != dic :
+        return False
+
+    return True
+
 
 def processRequest(req):
-    action = req.get("result").get("action")
-    parameters = req.get("result").get("parameters")
+    # Phải được chat lên từ facebook thì mới xử l
+    if not isContainKey("originalRequest;source",req, "facebook"):
+        return {}
+
+    action = req["result"]["action"]
+    parameters = req["result"]["parameters"]
+    senderID = req["result"]["contexts"][0]["parameters"]["facebook_sender_id"]
+
+
     res = {}
-    if action == "yahooWeatherForecast":
-        baseurl = "https://query.yahooapis.com/v1/public/yql?"
-        yql_query = makeYqlQuery(req)
-        if yql_query is None:
-            return {}
-        yql_url = baseurl + urlencode({'q': yql_query}) + "&format=json"
-        result = urlopen(yql_url).read()
-        data = json.loads(result)
-        res = makeWebhookResult(data)
-        return res
-    elif action == "input.LoiAMIS":
+    if action == "input.LoiAMIS":
         strErrorCode = parameters.get("LoiAMIS")
         if strErrorCode == "HRMLoginFail":
             res= "Không đăng nhập được vào hệ thống HRM. Anh/Chị làm theo hướng dẫn sau: http://kb.misa.com.vn/#knowledgeid=90"
@@ -84,10 +89,13 @@ def processRequest(req):
         sendMsgtoUser('Có một khác hàng không hỗ trợ được')
         res = "Em rất xin lỗi Anh (Chị) vấn đề này em chưa hỗ trợ được ạ. Anh (Chị) vui lòng gửi email tới support@misa.com.vn hoặc hỏi đáp trên http://forum.misa.com.vn/ giúp em nhé. Cám ơn anh chị ạ !"
 
-    if len(res) > 0:
-        return makeWebhookResult1(res)
-    else:
-        return {}
+    if not len(res) > 0 and senderID != "":
+        res = req.get("result").get("fulfillment").get("speech")
+        if "##facebook_name" in res.lower()  or "##gender" in res.lower():
+           res = res.replace('##facebook_name', get_info(senderID).get("last_name"))
+           res = res.replace('##gender', makeVietNameGender(get_info(senderID).get("gender"), False))
+           res = res.replace('##Gender', makeVietNameGender(get_info(senderID).get("gender"), True))
+    return makeWebhookResult1(res)
 
 def sendMsgtoUser(msg):
     thread_id = '100007842240328'
@@ -101,58 +109,32 @@ def makeWebhookResult1(data):
         "displayText": data,
         # "data": data,
         # "contextOut": [],
-        "source": "apiai-weather-webhook-sample"
+        "source": "dialogflow-webhook"
     }
 
-def makeYqlQuery(req):
-    result = req.get("result")
-    parameters = result.get("parameters")
-    city = parameters.get("geo-city")
-    if city is None:
-        return None
+def get_info(id):
+    fields='first_name,last_name,profile_pic,locale,timezone,gender'
+    conn = http.client.HTTPSConnection("graph.facebook.com")
+    conn.request("GET", "/v2.11/{}?fields={}&access_token={}".format(id,fields,FANPAGE_TOKEN))
 
-    return "select * from weather.forecast where woeid in (select woeid from geo.places(1) where text='" + city + "')"
+    res = conn.getresponse()
+    data = res.read()
 
+    obj=json.loads( data.decode("utf-8"))
+    return obj
 
-def makeWebhookResult(data):
-    query = data.get('query')
-    if query is None:
-        return {}
-
-    result = query.get('results')
-    if result is None:
-        return {}
-
-    channel = result.get('channel')
-    if channel is None:
-        return {}
-
-    item = channel.get('item')
-    location = channel.get('location')
-    units = channel.get('units')
-    if (location is None) or (item is None) or (units is None):
-        return {}
-
-    condition = item.get('condition')
-    if condition is None:
-        return {}
-
-    # print(json.dumps(item, indent=4))
-
-    speech = "Today the weather in " + location.get('city') + ": " + condition.get('text') + \
-             ", And the temperature is " + condition.get('temp') + " " + units.get('temperature')
-
-    print("Response:")
-    print(speech)
-
-    return {
-        "speech": speech,
-        "displayText": speech,
-        # "data": data,
-        # "contextOut": [],
-        "source": "apiai-weather-webhook-sample"
-    }
-
+def makeVietNameGender(value,isUpper):
+    if value == "male":
+        if isUpper ==True:
+            return "Anh"
+        else:
+            return "anh"
+    elif value == "female":
+        if isUpper ==True:
+            return "Chị"
+        else:
+            return "chị"
+    return "Anh/Chị"
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))

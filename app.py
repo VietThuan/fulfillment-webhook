@@ -35,7 +35,7 @@ from flask import make_response
 # Flask app should start in global layout
 app = Flask(__name__)
 
-FANPAGE_TOKEN = 'EAAQhILYOQ08BABYVdqnAaqWQ4wrifzM6y86SKV9mWn4u6DtIOuBxZBBFwfceJSSpl5jZC0dFZA4hq7fcgZCKMyYkNzsvPrssLFEbZAPciXGMliOf7tYuzLpq8Y5o7ZA4T0zbnZCVktxOZBJ7ZBYciD86TcpcRfhUgZAZCGjI47i3PSs5A4PgAdYZCmpu'
+FANPAGE_TOKEN = 'EAARJGq0hgDoBAMu87Yn7f9uR6ZBAgAZCc0qYuuOqXBipUsdpWggqwQ3riK5xq1glhQPSniKG5FXciM74nyW5xxJItIElUZBLEGWUCGz2Gm11Y1ALzA0AjYQXomg6oHi9rJOtjtcQFIgoQMxhcHzLg8ZBnThrJhKUiIimXZB5d7dJAYQn5To3D'
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -71,30 +71,19 @@ def processRequest(req):
 
     action = req["result"]["action"]
     parameters = req["result"]["parameters"]
-    senderID = req["result"]["contexts"][0]["parameters"]["facebook_sender_id"]
-
-
+    for item in req["result"]["contexts"]:
+        try:
+            senderID = item["parameters"]["facebook_sender_id"]
+            break
+        except:
+            pass
     res = {}
-    if action == "input.LoiAMIS":
-        strErrorCode = parameters.get("LoiAMIS")
-        if strErrorCode == "HRMLoginFail":
-            res= "Không đăng nhập được vào hệ thống HRM. Anh/Chị làm theo hướng dẫn sau: http://kb.misa.com.vn/#knowledgeid=90"
-        elif strErrorCode == "LoginFail":
-            res= "Không đăng nhập được vào hệ thống AMIS. Anh/Chị làm theo hướng dẫn sau: http://kb.misa.com.vn/#knowledgeid=548"
-        else:
-            sendMsgtoUser('Có một khác hàng không hỗ trợ được')
-            res = "Em rất xin lỗi Anh (Chị) vấn đề này em chưa hỗ trợ được ạ. Anh (Chị) vui lòng gửi email tới support@misa.com.vn hoặc hỏi đáp trên http://forum.misa.com.vn/ giúp em nhé. Cám ơn anh chị ạ !"
-
-    elif action == "input.unknown":
-        sendMsgtoUser('Có một khác hàng không hỗ trợ được')
-        res = "Em rất xin lỗi Anh (Chị) vấn đề này em chưa hỗ trợ được ạ. Anh (Chị) vui lòng gửi email tới support@misa.com.vn hoặc hỏi đáp trên http://forum.misa.com.vn/ giúp em nhé. Cám ơn anh chị ạ !"
-
     if not len(res) > 0 and senderID != "":
         res = req.get("result").get("fulfillment").get("speech")
-        if "##facebook_name" in res.lower()  or "##gender" in res.lower():
-           res = res.replace('##facebook_name', get_info(senderID).get("last_name"))
-           res = res.replace('##gender', makeVietNameGender(get_info(senderID).get("gender"), False))
-           res = res.replace('##Gender', makeVietNameGender(get_info(senderID).get("gender"), True))
+        if "##facebook_name" in res.lower() or "anh/chị" in res.lower():
+           res = res.replace('##facebook_name', get_info(senderID).get("first_name") + get_info(senderID).get("last_name") )
+           res = res.replace('anh/chị', makeVietNameGender(get_info(senderID).get("gender"), False))
+           res = res.replace('Anh/Chị', makeVietNameGender(get_info(senderID).get("gender"), True))
     return makeWebhookResult1(res)
 
 def sendMsgtoUser(msg):

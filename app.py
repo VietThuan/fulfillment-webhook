@@ -15,12 +15,13 @@
 # limitations under the License.
 
 from __future__ import print_function
-from future.standard_library import install_aliases
-install_aliases()
 
-from urllib.parse import urlparse, urlencode
-from urllib.request import urlopen, Request
-from urllib.error import HTTPError
+from functools import lru_cache
+
+from future.standard_library import install_aliases
+from lru import lru_cache_function
+
+install_aliases()
 
 import json
 import os
@@ -42,7 +43,7 @@ def webhook():
     req = request.get_json(silent=True, force=True)
 
     print("Request:")
-    print(json.dumps(req, indent=4))
+    # print(json.dumps(req, indent=4))
 
     res = processRequest(req)
 
@@ -101,7 +102,9 @@ def makeWebhookResult1(data):
         "source": "dialogflow-webhook"
     }
 
+@lru_cache_function(max_size=1024, expiration=15*60)
 def get_info(id):
+    print('get graph.facebook.com')
     fields='first_name,last_name,profile_pic,locale,timezone,gender'
     conn = http.client.HTTPSConnection("graph.facebook.com")
     conn.request("GET", "/v2.11/{}?fields={}&access_token={}".format(id,fields,FANPAGE_TOKEN))

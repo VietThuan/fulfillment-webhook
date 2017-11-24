@@ -15,12 +15,11 @@
 # limitations under the License.
 
 from __future__ import print_function
-from future.standard_library import install_aliases
-install_aliases()
 
-from urllib.parse import urlparse, urlencode
-from urllib.request import urlopen, Request
-from urllib.error import HTTPError
+from future.standard_library import install_aliases
+from lru import lru_cache_function
+
+install_aliases()
 
 import json
 import os
@@ -30,26 +29,24 @@ import http.client
 
 from flask import Flask
 from flask import request
-from flask import make_response
+from flask import jsonify
+from enum import Enum
 
 # Flask app should start in global layout
 app = Flask(__name__)
 
-FANPAGE_TOKEN = 'EAARJGq0hgDoBAMu87Yn7f9uR6ZBAgAZCc0qYuuOqXBipUsdpWggqwQ3riK5xq1glhQPSniKG5FXciM74nyW5xxJItIElUZBLEGWUCGz2Gm11Y1ALzA0AjYQXomg6oHi9rJOtjtcQFIgoQMxhcHzLg8ZBnThrJhKUiIimXZB5d7dJAYQn5To3D'
+FANPAGE_TOKEN = 'EAARJGq0hgDoBAEIfurZCZCEeZApeO0rcV1XpKiqZAMnvgkw3zxgX3MHSJYx5fAZCogwzzmIzdfZAXKjLgEAK1lKyIKs1iPcs21ukFcEQV2mX5XHXzw27h62sAAjoZClEqgpVMvv72DZATZCoiZCuklq1otPYCrdlREQAzX5d2gOntw5g24lV3P49S7'
+
+
+# Loai message cua fb
+class MessagesType(Enum):
+    TEXTRESPORSE = 0
+    QUICKREPLY = 2
+    CARD = 1
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    req = request.get_json(silent=True, force=True)
-
-    print("Request:")
-    print(json.dumps(req, indent=4))
-
-    res = processRequest(req)
-
-    res = json.dumps(res, indent=4)
-    r = make_response(res)
-    r.headers['Content-Type'] = 'application/json'
-    return r
+    return jsonify(processRequest(request.get_json(silent=True, force=True)))
 
 def isContainKey(data,dic,value):
     datas = data.split(";")
@@ -65,26 +62,52 @@ def isContainKey(data,dic,value):
 
 
 def processRequest(req):
-    # Phải được chat lên từ facebook thì mới xử l
+    # Phải được chat lên từ facebook thì mới xử ly
     if not isContainKey("originalRequest;source",req, "facebook"):
         return {}
 
-    action = req["result"]["action"]
-    parameters = req["result"]["parameters"]
     for item in req["result"]["contexts"]:
         try:
             senderID = item["parameters"]["facebook_sender_id"]
+            if req['result']['resolvedQuery'].lower() == "facebook_welcome":
+                get_info(senderID)
             break
         except:
             pass
     res = {}
     if not len(res) > 0 and senderID != "":
-        res = req.get("result").get("fulfillment").get("speech")
-        if "##facebook_name" in res.lower() or "anh/chị" in res.lower():
-           res = res.replace('##facebook_name', get_info(senderID).get("first_name") + get_info(senderID).get("last_name") )
-           res = res.replace('anh/chị', makeVietNameGender(get_info(senderID).get("gender"), False))
-           res = res.replace('Anh/Chị', makeVietNameGender(get_info(senderID).get("gender"), True))
-    return makeWebhookResult1(res)
+        for item in req['result']['fulfillment']['messages']:
+            try:
+                if item['type'] == MessagesType.TEXTRESPORSE.value:
+                    if "##fb_name" in item['speech'].lower() or "anh/chị" in item['speech'].lower():
+                        item['speech'] = item['speech'].replace('##fb_name',
+                                                                get_info(senderID).get("first_name") + get_info(
+                                                                    senderID).get("last_name"))
+                        item['speech'] = item['speech'].replace('anh/chị',
+                                                                makeVietNameGender(get_info(senderID).get("gender"), False))
+                        item['speech'] = item['speech'].replace('Anh/Chị',
+                                                                makeVietNameGender(get_info(senderID).get("gender"), True))
+                if item['type'] == MessagesType.QUICKREPLY.value:
+                    if "##fb_name" in item['title'].lower() or "anh/chị" in item['title'].lower():
+                        item['title'] = item['title'].replace('##fb_name',
+                                                                get_info(senderID).get("first_name") + get_info(
+                                                                    senderID).get("last_name"))
+                        item['title'] = item['title'].replace('anh/chị',
+                                                                makeVietNameGender(get_info(senderID).get("gender"), False))
+                        item['title'] = item['title'].replace('Anh/Chị',
+                                                                makeVietNameGender(get_info(senderID).get("gender"), True))
+                if item['type'] == MessagesType.CARD.value:
+                    if "##fb_name" in item['subtitle'].lower() or "anh/chị" in item['subtitle'].lower():
+                        item['subtitle'] = item['subtitle'].replace('##fb_name',
+                                                                get_info(senderID).get("first_name") + get_info(
+                                                                    senderID).get("last_name"))
+                        item['subtitle'] = item['subtitle'].replace('anh/chị',
+                                                                makeVietNameGender(get_info(senderID).get("gender"), False))
+                        item['subtitle'] = item['subtitle'].replace('Anh/Chị',
+                                                                makeVietNameGender(get_info(senderID).get("gender"), True))
+            except:
+                pass
+    return req['result']['fulfillment']
 
 def sendMsgtoUser(msg):
     thread_id = '100007842240328'
@@ -92,15 +115,8 @@ def sendMsgtoUser(msg):
     client = Client("0966880147", "mekiep")
     client.send(Message(text=msg), thread_id=thread_id, thread_type=thread_type)
 
-def makeWebhookResult1(data):
-    return {
-        "speech": data,
-        "displayText": data,
-        # "data": data,
-        # "contextOut": [],
-        "source": "dialogflow-webhook"
-    }
-
+# Luu cache trong 30 phut
+@lru_cache_function(max_size=1024, expiration=30*60)
 def get_info(id):
     fields='first_name,last_name,profile_pic,locale,timezone,gender'
     conn = http.client.HTTPSConnection("graph.facebook.com")
@@ -131,3 +147,4 @@ if __name__ == '__main__':
     print("Starting app on port %d" % port)
 
     app.run(debug=False, port=port, host='0.0.0.0')
+

@@ -1,0 +1,12 @@
+version: '3'
+services:
+  htkh-bot:
+    build: .
+    volumes:
+      - /opt/projects/fulfillment-webhook/:/code/
+    stdin_open: true
+    tty: true
+    restart: always
+    ports:
+      - 89:5000
+    container_name: "htkh-bot"

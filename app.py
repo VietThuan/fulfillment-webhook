@@ -57,15 +57,12 @@ def isContainKey(data,dic,value):
             dic = dic.get(item)
     if value != "" and value != dic :
         return False
-
     return True
-
 
 def processRequest(req):
     # Phải được chat lên từ facebook thì mới xử ly
     if not isContainKey("originalRequest;source",req, "facebook"):
         return {}
-
     for item in req["result"]["contexts"]:
         try:
             senderID = item["parameters"]["facebook_sender_id"]
@@ -74,37 +71,25 @@ def processRequest(req):
             break
         except:
             pass
-    res = {}
-    if not len(res) > 0 and senderID != "":
+    if senderID != "":
         for item in req['result']['fulfillment']['messages']:
             try:
+                contentType = ""
                 if item['type'] == MessagesType.TEXTRESPORSE.value:
-                    if "##fb_name" in item['speech'].lower() or "anh/chị" in item['speech'].lower():
-                        item['speech'] = item['speech'].replace('##fb_name',
-                                                                get_info(senderID).get("first_name") + get_info(
-                                                                    senderID).get("last_name"))
-                        item['speech'] = item['speech'].replace('anh/chị',
-                                                                makeVietNameGender(get_info(senderID).get("gender"), False))
-                        item['speech'] = item['speech'].replace('Anh/Chị',
-                                                                makeVietNameGender(get_info(senderID).get("gender"), True))
+                    contentType = 'speech'
                 if item['type'] == MessagesType.QUICKREPLY.value:
-                    if "##fb_name" in item['title'].lower() or "anh/chị" in item['title'].lower():
-                        item['title'] = item['title'].replace('##fb_name',
-                                                                get_info(senderID).get("first_name") + get_info(
-                                                                    senderID).get("last_name"))
-                        item['title'] = item['title'].replace('anh/chị',
-                                                                makeVietNameGender(get_info(senderID).get("gender"), False))
-                        item['title'] = item['title'].replace('Anh/Chị',
-                                                                makeVietNameGender(get_info(senderID).get("gender"), True))
+                    contentType = 'title'
                 if item['type'] == MessagesType.CARD.value:
-                    if "##fb_name" in item['subtitle'].lower() or "anh/chị" in item['subtitle'].lower():
-                        item['subtitle'] = item['subtitle'].replace('##fb_name',
-                                                                get_info(senderID).get("first_name") + get_info(
-                                                                    senderID).get("last_name"))
-                        item['subtitle'] = item['subtitle'].replace('anh/chị',
-                                                                makeVietNameGender(get_info(senderID).get("gender"), False))
-                        item['subtitle'] = item['subtitle'].replace('Anh/Chị',
-                                                                makeVietNameGender(get_info(senderID).get("gender"), True))
+                    contentType = 'subtitle'
+
+                if "##fb_name" in item[contentType].lower() or "anh/chị" in item[contentType].lower():
+                    item[contentType] = item[contentType].replace('##fb_name',
+                                                            get_info(senderID).get("first_name") + get_info(
+                                                                senderID).get("last_name"))
+                    item[contentType] = item[contentType].replace('anh/chị',
+                                                            makeVietNameGender(get_info(senderID).get("gender"), False))
+                    item[contentType] = item[contentType].replace('Anh/Chị',
+                                                            makeVietNameGender(get_info(senderID).get("gender"), True))
             except:
                 pass
     return req['result']['fulfillment']

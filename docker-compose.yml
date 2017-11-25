@@ -1,12 +1,27 @@
 version: '3'
 services:
+  test-bot:
+    build: .
+    volumes:
+      - /opt/projects/fulfillment-webhook/:/code/
+    stdin_open: true
+    environment:
+      FANPAGE_TOKEN : EAARJGq0hgDoBAEIfurZCZCEeZApeO0rcV1XpKiqZAMnvgkw3zxgX3MHSJYx5fAZCogwzzmIzdfZAXKjLgEAK1lKyIKs1iPcs21ukFcEQV2mX5XHXzw27h62sAAjoZClEqgpVMvv72DZATZCoiZCuklq1otPYCrdlREQAzX5d2gOntw5g24lV3P49S7
+    tty: true
+    restart: always
+    ports:
+      - 89:5000
+    container_name: "Test-Bot"
+
   htkh-bot:
     build: .
     volumes:
       - /opt/projects/fulfillment-webhook/:/code/
     stdin_open: true
+    environment:
+      FANPAGE_TOKEN : EAAVSHCiVN4sBALg8cd4bfvZAhQoMEEHK9UFNhwHJK9xPadSq7ZBrcGLB0BN2i7PW9bS3PRxUgVFD6D4hJhXXrJu7xml9kNkjZCgkuzcRMohzmoH5v53k6gAOwsqctfz0fxumxAt4eoZAkZA1HrEo75cp3J0ZBzuaXepU0odjaHZCBdIs8CGOyet
     tty: true
     restart: always
     ports:
-      - 89:5000
-    container_name: "htkh-bot"
+      - 88:5000
+    container_name: "HTKH-Bot"

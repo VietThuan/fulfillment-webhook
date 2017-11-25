@@ -16,8 +16,11 @@
 
 from __future__ import print_function
 
+import pycommon
 from future.standard_library import install_aliases
 from lru import lru_cache_function
+
+from config import ChatbotConfig
 
 install_aliases()
 
@@ -35,14 +38,22 @@ from enum import Enum
 # Flask app should start in global layout
 app = Flask(__name__)
 
-FANPAGE_TOKEN = 'EAARJGq0hgDoBAEIfurZCZCEeZApeO0rcV1XpKiqZAMnvgkw3zxgX3MHSJYx5fAZCogwzzmIzdfZAXKjLgEAK1lKyIKs1iPcs21ukFcEQV2mX5XHXzw27h62sAAjoZClEqgpVMvv72DZATZCoiZCuklq1otPYCrdlREQAzX5d2gOntw5g24lV3P49S7'
+cfg=ChatbotConfig()
+cfg.merge_file(pycommon.get_callee_path()+"/config.ini")
+cfg.merge_env()
 
+print(cfg)
 
 # Loai message cua fb
 class MessagesType(Enum):
     TEXTRESPORSE = 0
     QUICKREPLY = 2
     CARD = 1
+# Loai message cua fb
+class MessagesTitle():
+    TEXTRESPORSE = 'speech'
+    QUICKREPLY = 'title'
+    CARD = 'subtitle'
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -66,7 +77,7 @@ def processRequest(req):
     for item in req["result"]["contexts"]:
         try:
             senderID = item["parameters"]["facebook_sender_id"]
-            if req['result']['resolvedQuery'].lower() == "facebook_welcome":
+            if req['result']['resolvedQuery'].lower() == "facebook_welcome" or req['result']['resolvedQuery'].lower() == "welcome" :
                 get_info(senderID)
             break
         except:
@@ -74,21 +85,21 @@ def processRequest(req):
     if senderID != "":
         for item in req['result']['fulfillment']['messages']:
             try:
-                contentType = ""
+                msg_Type = ""
                 if item['type'] == MessagesType.TEXTRESPORSE.value:
-                    contentType = 'speech'
+                    msg_Type = MessagesTitle.TEXTRESPORSE
                 if item['type'] == MessagesType.QUICKREPLY.value:
-                    contentType = 'title'
+                    msg_Type = MessagesTitle.QUICKREPLY
                 if item['type'] == MessagesType.CARD.value:
-                    contentType = 'subtitle'
+                    msg_Type = MessagesTitle.CARD
 
-                if "##fb_name" in item[contentType].lower() or "anh/chị" in item[contentType].lower():
-                    item[contentType] = item[contentType].replace('##fb_name',
-                                                            get_info(senderID).get("first_name") + get_info(
+                if "##fb_name" in item[msg_Type].lower() or "anh/chị" in item[msg_Type].lower():
+                    item[msg_Type] = item[msg_Type].replace('##fb_name',
+                                                            get_info(senderID).get("first_name") + " " + get_info(
                                                                 senderID).get("last_name"))
-                    item[contentType] = item[contentType].replace('anh/chị',
+                    item[msg_Type] = item[msg_Type].replace('anh/chị',
                                                             makeVietNameGender(get_info(senderID).get("gender"), False))
-                    item[contentType] = item[contentType].replace('Anh/Chị',
+                    item[msg_Type] = item[msg_Type].replace('Anh/Chị',
                                                             makeVietNameGender(get_info(senderID).get("gender"), True))
             except:
                 pass
@@ -105,7 +116,7 @@ def sendMsgtoUser(msg):
 def get_info(id):
     fields='first_name,last_name,profile_pic,locale,timezone,gender'
     conn = http.client.HTTPSConnection("graph.facebook.com")
-    conn.request("GET", "/v2.11/{}?fields={}&access_token={}".format(id,fields,FANPAGE_TOKEN))
+    conn.request("GET", "/v2.11/{}?fields={}&access_token={}".format(id,fields,cfg.FANPAGE_TOKEN))
 
     res = conn.getresponse()
     data = res.read()
@@ -132,4 +143,3 @@ if __name__ == '__main__':
     print("Starting app on port %d" % port)
 
     app.run(debug=False, port=port, host='0.0.0.0')
-

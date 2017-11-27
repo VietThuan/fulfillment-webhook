@@ -29,6 +29,9 @@ import os
 from fbchat import Client
 from fbchat.models import *
 import http.client
+import time
+import threading
+import queue
 
 from flask import Flask
 from flask import request
@@ -57,7 +60,22 @@ class MessagesTitle():
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    return jsonify(processRequest(request.get_json(silent=True, force=True)))
+    my_queue = queue.Queue()
+    req = request.get_json(silent=True, force=True)
+    thread1 = threading.Thread(target=processRequest, args=(req, my_queue))
+    thread1.start()
+    thread1.join(timeout= 4)
+    if thread1.is_alive():
+        res = {
+            "speech": "Cho 1 chut",
+            "displayText": "Cho 1 chut",
+            # "data": data,
+            # "contextOut": [],
+            "source": "MISA-webhook"
+        }
+    else:
+        res = my_queue.get()
+    return jsonify(res)
 
 def isContainKey(data,dic,value):
     datas = data.split(";")
@@ -70,7 +88,7 @@ def isContainKey(data,dic,value):
         return False
     return True
 
-def processRequest(req):
+def processRequest(req,my_queue):
     # Phải được chat lên từ facebook thì mới xử ly
     if not isContainKey("originalRequest;source",req, "facebook"):
         return {}
@@ -110,7 +128,8 @@ def processRequest(req):
 
             except:
                 pass
-    return req['result']['fulfillment']
+        time.sleep(5)
+        my_queue.put(req['result']['fulfillment'])
 
 def sendMsgtoUser(msg):
     thread_id = '100007842240328'

@@ -83,6 +83,12 @@ def processRequest(req):
         except:
             pass
     if senderID != "":
+        genderL = makeVietNameGender(get_info(senderID).get("gender"), False)
+        genderU = makeVietNameGender(get_info(senderID).get("gender"), True)
+        facebookName = get_info(senderID).get("first_name") + get_info(senderID).get("last_name")
+        arrGengerU = cfg.GENDER_U.split(";")
+        arrGengerL = cfg.GENDER_L.split(";")
+
         for item in req['result']['fulfillment']['messages']:
             try:
                 msg_Type = ""
@@ -93,14 +99,15 @@ def processRequest(req):
                 if item['type'] == MessagesType.CARD.value:
                     msg_Type = MessagesTitle.CARD
 
-                if "##fb_name" in item[msg_Type].lower() or "anh/chị" in item[msg_Type].lower():
-                    item[msg_Type] = item[msg_Type].replace('##fb_name',
-                                                            get_info(senderID).get("first_name") + " " + get_info(
-                                                                senderID).get("last_name"))
-                    item[msg_Type] = item[msg_Type].replace('anh/chị',
-                                                            makeVietNameGender(get_info(senderID).get("gender"), False))
-                    item[msg_Type] = item[msg_Type].replace('Anh/Chị',
-                                                            makeVietNameGender(get_info(senderID).get("gender"), True))
+
+
+                if "##fb_name" in item[msg_Type].lower() or "anh/chị" in item[msg_Type].lower() or "anh/chi" in item[msg_Type].lower():
+                    item[msg_Type] = item[msg_Type].replace('##fb_name',facebookName)
+                    for genderItemL in arrGengerL:
+                        item[msg_Type] = item[msg_Type].replace(genderItemL, genderL)
+                    for genderItemU in arrGengerU:
+                        item[msg_Type] = item[msg_Type].replace(genderItemU, genderU)
+
             except:
                 pass
     return req['result']['fulfillment']

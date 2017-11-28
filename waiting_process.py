@@ -85,5 +85,4 @@ class GetGenderTask:
 
                 except:
                     pass
-            time.sleep(5)
             self.result = self.req['result']['fulfillment']

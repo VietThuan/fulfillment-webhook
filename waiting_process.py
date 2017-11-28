@@ -68,7 +68,7 @@ class GetGenderTask:
                 get_info(self.senderId)
             genderL = makeVietNameGender(get_info(self.senderId).get("gender"), False)
             genderU = makeVietNameGender(get_info(self.senderId).get("gender"), True)
-            facebookName = get_info(self.senderId).get("first_name") + get_info(self.senderId).get("last_name")
+            facebookName = get_info(self.senderId).get("first_name") + " " + get_info(self.senderId).get("last_name")
             arrGengerU = cfg.GENDER_U.split(";")
             arrGengerL = cfg.GENDER_L.split(";")
 

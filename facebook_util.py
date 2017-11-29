@@ -2,11 +2,15 @@
 import http
 import json
 
-from lru import lru_cache_function
+from cachetools import TTLCache, cached
 
 from config import ChatbotConfig
 
 cfg = ChatbotConfig()
+from threading import RLock
+
+cache = TTLCache(maxsize=100, ttl=1800)
+lock = RLock()
 
 
 # Kiểm tra key có tồn tại trong dic hay không
@@ -22,8 +26,10 @@ def isContainKey(data, dic, value):
     return True
 
 
-@lru_cache_function(max_size=1024, expiration=30 * 60)
+# @lru_cache_function(max_size=1024, expiration=30 * 60)
+@cached(cache, lock=lock)
 def get_info(id):
+    print("Get Facebook info {}".format(id))
     fields = 'first_name,last_name,profile_pic,locale,timezone,gender'
     conn = http.client.HTTPSConnection("graph.facebook.com")
     conn.request("GET", "/v2.11/{}?fields={}&access_token={}".format(id, fields, cfg.FANPAGE_TOKEN))
@@ -33,6 +39,10 @@ def get_info(id):
 
     obj = json.loads(data.decode("utf-8"))
     return obj
+
+
+with lock:
+    cache.clear()
 
 
 def makeVietNameGender(value, isUpper):

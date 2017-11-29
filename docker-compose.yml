@@ -1,17 +1,30 @@
 version: '3'
 services:
-  test-bot:
+  research-bot:
     build: .
     volumes:
       - /opt/projects/fulfillment-webhook/:/code/
     stdin_open: true
     environment:
-      FANPAGE_TOKEN : EAARJGq0hgDoBAEIfurZCZCEeZApeO0rcV1XpKiqZAMnvgkw3zxgX3MHSJYx5fAZCogwzzmIzdfZAXKjLgEAK1lKyIKs1iPcs21ukFcEQV2mX5XHXzw27h62sAAjoZClEqgpVMvv72DZATZCoiZCuklq1otPYCrdlREQAzX5d2gOntw5g24lV3P49S7
+      FANPAGE_TOKEN : EAAFCFHCMLPwBABWdKcc5SN2Sovd273Cwc59m0iFKJ8dQzlXvctph3RHUAfI93T3mPky5zpuqZALfjdmFQXjairTjeg20wOYxWFiH94mPraQ15O7KPZB7dqJRGgJYvE6leSuXJcvsFPrIHPbJsekIkZAouBlMJUrkSaCCMGykg7WRvsS7UO3
     tty: true
     restart: always
     ports:
-      - 89:5000
-    container_name: "Test-Bot"
+      - 8901:5000
+    container_name: "research-bot"
+
+  website-misa-bot:
+    build: .
+    volumes:
+      - /opt/projects/fulfillment-webhook/:/code/
+    stdin_open: true
+    environment:
+      FANPAGE_TOKEN : EAAFCFHCMLPwBAM4KI61M2TsZB8y1sjCdNUnloayHb5qzSydjHoOmL46RpWh4Nr2wNboA1pQv2xOX6nsZB3clZCiC2ZCkq2GZBdr5mVDRhmtDUBbrYp2JOwdDYeb0a9E5JphsweZCRZAGHb9H6mXf7wh98GMFHNpI2QwdjypUkU2Q9vEwXD3eVcC
+    tty: true
+    restart: always
+    ports:
+      - 8902:5000
+    container_name: "website-misa-bot"
 
   htkh-bot:
     build: .
@@ -23,5 +36,6 @@ services:
     tty: true
     restart: always
     ports:
-      - 88:5000
-    container_name: "HTKH-Bot"
+      - 8903:5000
+    container_name: "htkh-bot"
+

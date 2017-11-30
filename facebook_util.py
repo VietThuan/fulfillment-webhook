@@ -9,7 +9,8 @@ from config import ChatbotConfig
 cfg = ChatbotConfig()
 from threading import RLock
 
-cache = TTLCache(maxsize=100, ttl=1800)
+# Tạo cache
+cache = TTLCache(maxsize=int(cfg.CACHE_MAXSIZE), ttl=int(cfg.CACHE_TTL))
 lock = RLock()
 
 
@@ -25,12 +26,11 @@ def isContainKey(data, dic, value):
         return False
     return True
 
-
-# @lru_cache_function(max_size=1024, expiration=30 * 60)
+# Lấy thông tin của Facebook theo senderID
 @cached(cache, lock=lock)
 def get_info(id):
     print("Get Facebook info {}".format(id))
-    fields = 'first_name,last_name,profile_pic,locale,timezone,gender'
+    fields = 'first_name,last_name,gender'
     conn = http.client.HTTPSConnection("graph.facebook.com")
     conn.request("GET", "/v2.11/{}?fields={}&access_token={}".format(id, fields, cfg.FANPAGE_TOKEN))
 
@@ -44,7 +44,7 @@ def get_info(id):
 with lock:
     cache.clear()
 
-
+# Tạo tên xưng hô từ giới tính lấy được từ Facebook
 def makeVietNameGender(value, isUpper):
     if value == "male":
         if isUpper == True:

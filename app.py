@@ -39,7 +39,7 @@ cfg = ChatbotConfig()
 def webhook():
     req = request.get_json(silent=True, force=True)
 
-    # Phải được chat lên từ facebook thì mới xử lý
+    # Chỉ xử lý câu trả lời cho hội thoại trên facebook
     if not isContainKey("originalRequest;source", req, "facebook"):
         return {}
 

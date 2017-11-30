@@ -13,18 +13,22 @@ from facebook_util import get_info, makeVietNameGender, isContainKey
 
 cfg = ChatbotConfig()
 
-
+# Lớp gửi câu trả lời cho Facebook
 class SendMessageTask:
     def __init__(self, generate_message_task, senderId):
         self.subject = generate_message_task
         self.senderId = senderId
 
     def run(self):
+        # Tạo thread xử lý câu trả lời cho Facebook (cập nhật danh xưng và tên cho câu trả lời)
         create_response_thread = threading.Thread(target=self.execute, args=())
         create_response_thread.start()
-        create_response_thread.join(timeout=int(cfg.THREAD_TIMEOUT))
 
+        create_response_thread.join(timeout=int(cfg.THREAD_TIMEOUT))
+        # Nếu quá thời gian mà thead vẫn chưa xong thì thực hiện gửi tin thông báo chờ đợi
         if create_response_thread.is_alive():
+
+            # Tạo thread thực hiện trả lời nốt cho Facebook
             send_thread = threading.Thread(target=self.send_message, args=(create_response_thread,))
             send_thread.start()
             return jsonify({
@@ -35,10 +39,13 @@ class SendMessageTask:
         else:
             return jsonify(self.subject.result)
 
+    # Gửi tin nhắn cho người chat theo senderID
     def send_message(self, thread):
+        # Chờ đợi cho tới khi thread xử lý câu trả lời cho Facebook xong
         thread.join()
         logging.debug("Send to facebook id {}".format(self.senderId))
 
+        # Lấy kết quả của thread đó để gửi cho người chat.
         for item in self.subject.result['messages']:
             # dataJSON = genDataJSON(sender_id, item)
             if not isContainKey("platform", item,'facebook'):
@@ -55,7 +62,7 @@ class SendMessageTask:
     def execute(self):
         self.subject.run()
 
-
+# Tạo câu trả lời cho Facebook
 class GetGenderTask:
     def __init__(self, req, senderId):
         self.senderId = senderId

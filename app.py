@@ -28,7 +28,6 @@ import os
 from flask import Flask
 from flask import request
 
-
 # Flask app should start in global layout
 app = Flask(__name__)
 
@@ -52,10 +51,9 @@ def webhook():
 
     return SendMessageTask(GetGenderTask(req, senderID), senderID).run()
 
-
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
 
     print("Starting app on port %d" % port)
 
-    app.run(debug=False, port=port, host='0.0.0.0')
+    app.run(debug=False, port=port, host='0.0.0.0',threaded=True)

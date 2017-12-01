@@ -1,8 +1,6 @@
 import logging
 import threading
 
-import time
-
 import requests
 from flask import jsonify
 

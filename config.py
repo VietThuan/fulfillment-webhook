@@ -1,6 +1,5 @@
-from pycommon import ConfigBase
-
 import pycommon.patterns
+from pycommon import ConfigBase
 
 
 @pycommon.patterns.singleton
@@ -11,6 +10,11 @@ class ChatbotConfig(ConfigBase):
     THREAD_TIMEOUT = None
     CACHE_MAXSIZE = None
     CACHE_TTL = None
+    LogPath = None
+    LogStashServerEndpoint = None
+    LogStashServerPort = None
+    MaxThread = 20
+
 
 cfg = ChatbotConfig()
 cfg.merge_file(pycommon.get_callee_path() + "/config.ini")

@@ -1,5 +1,6 @@
 import logging
 import threading
+import traceback
 
 import requests
 from flask import jsonify
@@ -10,6 +11,9 @@ from facebook_messager_builder import MessageFactory
 from facebook_util import get_info, makeVietNameGender, isContainKey
 
 cfg = ChatbotConfig()
+
+number_of_thread = 0
+
 
 # Lớp gửi câu trả lời cho Facebook
 class SendMessageTask:
@@ -25,7 +29,6 @@ class SendMessageTask:
         create_response_thread.join(timeout=int(cfg.THREAD_TIMEOUT))
         # Nếu quá thời gian mà thead vẫn chưa xong thì thực hiện gửi tin thông báo chờ đợi
         if create_response_thread.is_alive():
-
             # Tạo thread thực hiện trả lời nốt cho Facebook
             send_thread = threading.Thread(target=self.send_message, args=(create_response_thread,))
             send_thread.start()
@@ -45,8 +48,7 @@ class SendMessageTask:
 
         # Lấy kết quả của thread đó để gửi cho người chat.
         for item in self.subject.result['messages']:
-            # dataJSON = genDataJSON(sender_id, item)
-            if not isContainKey("platform", item,'facebook'):
+            if not isContainKey("platform", item, 'facebook'):
                 continue
             dataJSON = MessageFactory().create_message(item['type'], self.senderId, item)
             res = requests.post(
@@ -58,22 +60,30 @@ class SendMessageTask:
             logging.debug("Send result: {}".format(str(res)))
 
     def execute(self):
+        global number_of_thread
+        number_of_thread = number_of_thread + 1
+        if number_of_thread > int(cfg.MaxThread):
+            logging.warning("number of thread to large:" + str(number_of_thread))
         self.subject.run()
+        number_of_thread = number_of_thread - 1
+
 
 # Tạo câu trả lời cho Facebook
 class GetGenderTask:
     def __init__(self, req, senderId):
         self.senderId = senderId
         self.req = req
+        self.result = ''
 
     def run(self):
         if self.senderId != "":
-            if self.req['result']['resolvedQuery'].lower() == "facebook_welcome" or self.req['result'][
-                'resolvedQuery'].lower() == "welcome":
+            if self.req['result']['resolvedQuery'].lower() == "facebook_welcome" or \
+                    self.req['result']['resolvedQuery'].lower() == "welcome":
                 get_info(self.senderId)
             genderL = makeVietNameGender(get_info(self.senderId).get("gender"), False)
             genderU = makeVietNameGender(get_info(self.senderId).get("gender"), True)
-            facebookName = get_info(self.senderId).get("first_name") + " " + get_info(self.senderId).get("last_name")
+            facebookName = get_info(self.senderId).get("first_name", '') + " " + get_info(self.senderId).get(
+                "last_name", '')
             arrGengerU = cfg.GENDER_U.split(";")
             arrGengerL = cfg.GENDER_L.split(";")
 
@@ -87,7 +97,6 @@ class GetGenderTask:
                             item[msg_Type] = item[msg_Type].replace(genderItemL, genderL)
                         for genderItemU in arrGengerU:
                             item[msg_Type] = item[msg_Type].replace(genderItemU, genderU)
-
                 except:
-                    pass
+                    logging.error("Error on GetGenderTask.run(), traceback:" + traceback.format_exc())
             self.result = self.req['result']['fulfillment']

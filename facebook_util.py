@@ -1,6 +1,8 @@
 # Luu cache trong 30 phut
 import http
 import json
+import logging
+import traceback
 
 from cachetools import TTLCache, cached
 
@@ -26,23 +28,29 @@ def isContainKey(data, dic, value):
         return False
     return True
 
+
 # Lấy thông tin của Facebook theo senderID
 @cached(cache, lock=lock)
 def get_info(id):
-    print("Get Facebook info {}".format(id))
-    fields = 'first_name,last_name,gender'
-    conn = http.client.HTTPSConnection("graph.facebook.com")
-    conn.request("GET", "/v2.11/{}?fields={}&access_token={}".format(id, fields, cfg.FANPAGE_TOKEN))
+    try:
+        print("Get Facebook info {}".format(id))
+        fields = 'first_name,last_name,gender'
+        conn = http.client.HTTPSConnection("graph.facebook.com")
+        conn.request("GET", "/v2.11/{}?fields={}&access_token={}".format(id, fields, cfg.FANPAGE_TOKEN))
 
-    res = conn.getresponse()
-    data = res.read()
+        res = conn.getresponse()
+        data = res.read()
 
-    obj = json.loads(data.decode("utf-8"))
-    return obj
+        obj = json.loads(data.decode("utf-8"))
+        return obj
+    except Exception as ex:
+        logging.error("Error one get_info:" + traceback.format_exc())
+        raise ex
 
 
 with lock:
     cache.clear()
+
 
 # Tạo tên xưng hô từ giới tính lấy được từ Facebook
 def makeVietNameGender(value, isUpper):

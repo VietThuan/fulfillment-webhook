@@ -1,7 +1,9 @@
 import json
+
 import pycommon.patterns
 
 from enums import MessagesType, getMsgType
+
 
 # Tạo câu trả lời cho facebook thông qua graph API
 @pycommon.patterns.singleton

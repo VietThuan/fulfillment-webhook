@@ -45,6 +45,7 @@ def reset_content(req):
     t = threading.Thread(target=invoke_reset_context, args=(req['sessionId'],))
     t.daemon = True
     t.start()
+    return req
 
 # Mapping action trong DF với hàm của webhook
 action_resolve = {

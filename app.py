@@ -8,6 +8,7 @@ import threading
 import traceback
 
 import pycommon
+from cachetools import TTLCache
 from future.standard_library import install_aliases
 
 from config import ChatbotConfig
@@ -32,6 +33,9 @@ logger.build()
 
 logging.error("Start app with config:" + str(cfg))
 
+current_contexts = TTLCache(maxsize=int(cfg.CACHE_MAXSIZE), ttl=int(1800))
+lock = threading.RLock()
+
 
 def invoke_reset_context(req):
     if req['sessionId'] not in current_contexts:
@@ -46,9 +50,11 @@ def invoke_reset_context(req):
     print("Contexts Delete: {}".format(current_contexts[req['sessionId']]))
     # current_contexts.pop(session_id)
 
-    time.sleep(1)
+    # time.sleep(1)
 
     for v in contextNames:
+        if len(v.strip())==0:
+            continue
         s = 'curl -X DELETE \
         "https://api.dialogflow.com/v1/contexts/{}?timezone=Asia/Saigon&lang=en&sessionId={}"\
         -H "Authorization: Bearer {}" -H "Content-Type: application/json"'
@@ -70,9 +76,6 @@ action_resolve = {
     'xoangucanh': reset_content
 }
 
-current_contexts = {}
-
-
 
 def set_to_current_old(session_id, list_context):
     global current_contexts
@@ -93,6 +96,12 @@ def set_to_current(session_id, list_context):
 @app.route('/webhook', methods=['POST'])
 def webhook():
     req = request.get_json(silent=True, force=True)
+    global current_contexts
+
+    if req['sessionId'] not in current_contexts:
+        print('cache ko co :'+req['sessionId'])
+    else:
+        print('cache co session id: ' + req['sessionId'] )
 
     actions = req['result']['action'].split(';')
 
@@ -104,10 +113,13 @@ def webhook():
 
         print("hasActionXoangucanh: {}".format(hasActionXoangucanh))
 
-        global current_contexts
+
         if hasActionXoangucanh == False:
             key = req['sessionId']
             set_to_current_old(key, [x['name'] for x in req['result']['contexts']])
+
+            # hasActionXoangucanh = True
+        # if  hasActionXoangucanh:
 
         for action in actions:
             if action in action_resolve:
@@ -115,8 +127,9 @@ def webhook():
 
         if hasActionXoangucanh == True:
             key = req['sessionId']
-            if key not in current_contexts:
-                set_to_current(key, set([x['name'] for x in req['result']['contexts']]) - set(current_contexts[key].split(";")))
+            if key in current_contexts:
+                set_to_current(key, set([x['name'] for x in req['result']['contexts']]) - set(
+                    current_contexts[key].split(";")))
             else:
                 set_to_current(key, set([x['name'] for x in req['result']['contexts']]))
 

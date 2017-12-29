@@ -6,7 +6,7 @@ ENV LANG=C.UTF-8
 RUN apt-get update
 
 # install pip3
-RUN apt-get -y install python3-pip
+RUN apt-get -y install python3-pip && apt-get install -y curl
 RUN pip3 install --upgrade pip
 
 

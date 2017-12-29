@@ -32,25 +32,63 @@ logger.build()
 
 logging.error("Start app with config:" + str(cfg))
 
-def invoke_reset_context(session_id):
+
+def invoke_reset_context(req):
+    if req['sessionId'] not in current_contexts:
+        return
     import time
+    contextNames = current_contexts[req['sessionId']].split(";")
+
+    if set([x['name'] for x in req['result']['contexts']]) == set(contextNames):
+        print("Bang nhau: {}".format(current_contexts[req['sessionId']]))
+        return
+
+    print("Contexts Delete: {}".format(current_contexts[req['sessionId']]))
+    # current_contexts.pop(session_id)
+
     time.sleep(1)
-    s = 'curl -H "Authorization: Bearer {}" \
-                               "https://api.dialogflow.com/v1/query?v=20150910&query=test&resetContexts=true&timezone=Asia/Saigon&lang=en&sessionId={}"'
-    replaced = s.format(cfg.DF_TOKEN, session_id)
-    print( pycommon.execute_curl(replaced))
+
+    for v in contextNames:
+        s = 'curl -X DELETE \
+        "https://api.dialogflow.com/v1/contexts/{}?timezone=Asia/Saigon&lang=en&sessionId={}"\
+        -H "Authorization: Bearer {}" -H "Content-Type: application/json"'
+
+        replaced = s.format(v, req['sessionId'], cfg.DF_TOKEN)
+        print(replaced)
+        print(pycommon.execute_curl(replaced, json_out=False))
 
 
 def reset_content(req):
-    t = threading.Thread(target=invoke_reset_context, args=(req['sessionId'],))
+    t = threading.Thread(target=invoke_reset_context, args=(req,))
     t.daemon = True
     t.start()
     return req
+
 
 # Mapping action trong DF với hàm của webhook
 action_resolve = {
     'xoangucanh': reset_content
 }
+
+current_contexts = {}
+
+
+
+def set_to_current_old(session_id, list_context):
+    global current_contexts
+    if session_id in current_contexts:
+        print("Old :" + ";".join(list_context))
+    values = ';'.join(list_context)
+    current_contexts[session_id] = values
+
+
+def set_to_current(session_id, list_context):
+    global current_contexts
+    if session_id in current_contexts:
+        print("New :" + ";".join(list_context))
+    values = ';'.join(list_context)
+    current_contexts[session_id] = values
+
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -59,9 +97,31 @@ def webhook():
     actions = req['result']['action'].split(';')
 
     try:
+        hasActionXoangucanh = False
+        for action in actions:
+            if action == 'xoangucanh':
+                hasActionXoangucanh = True
+
+        print("hasActionXoangucanh: {}".format(hasActionXoangucanh))
+
+        global current_contexts
+        if hasActionXoangucanh == False:
+            key = req['sessionId']
+            set_to_current_old(key, [x['name'] for x in req['result']['contexts']])
+
         for action in actions:
             if action in action_resolve:
                 req = action_resolve[action](req)
+
+        if hasActionXoangucanh == True:
+            key = req['sessionId']
+            if key not in current_contexts:
+                set_to_current(key, set([x['name'] for x in req['result']['contexts']]) - set(current_contexts[key].split(";")))
+            else:
+                set_to_current(key, set([x['name'] for x in req['result']['contexts']]))
+
+        print("Current Context: {}".format(current_contexts[req['sessionId']]))
+
     except:
         logging.error("Error when execute action:" + str(traceback.format_exc()))
 

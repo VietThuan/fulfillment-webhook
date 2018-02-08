@@ -8,6 +8,7 @@ import threading
 import traceback
 
 import pycommon
+from cachetools import TTLCache
 from future.standard_library import install_aliases
 
 from config import ChatbotConfig
@@ -32,44 +33,39 @@ logger.build()
 
 logging.error("Start app with config:" + str(cfg))
 
+current_contexts = TTLCache(maxsize=int(cfg.CACHE_MAXSIZE), ttl=int(1800))
+lock = threading.RLock()
 
-def invoke_reset_context(session_id):
+
+def invoke_reset_context(req):
+    if req['sessionId'] not in current_contexts:
+        return
     import time
-    time.sleep(1)
-    s = 'curl -H "Authorization: Bearer {}" \
-                               "https://api.dialogflow.com/v1/query?v=20150910&query=test&resetContexts=true&timezone=Asia/Saigon&lang=en&sessionId={}"'
-    replaced = s.format(cfg.DF_TOKEN, session_id)
-    print(pycommon.execute_curl(replaced))
+    contextNames = current_contexts[req['sessionId']].split(";")
 
+    if set([x['name'] for x in req['result']['contexts']]) == set(contextNames):
+        print("Bang nhau: {}".format(current_contexts[req['sessionId']]))
+        return
 
-fallback_intent_count = {}
+    print("Contexts Delete: {}".format(current_contexts[req['sessionId']]))
+    # current_contexts.pop(session_id)
 
+    # time.sleep(1)
 
-def khong_hieu(req):
-    logging.warning("Ko hieu")
-    session_id = req['sessionId']
-    if session_id not in fallback_intent_count:
-        fallback_intent_count[session_id] = 0
-    fallback_intent_count[session_id] = fallback_intent_count[session_id] + 1
+    for v in contextNames:
+        if len(v.strip())==0:
+            continue
+        s = 'curl -X DELETE \
+        "https://api.dialogflow.com/v1/contexts/{}?timezone=Asia/Saigon&lang=en&sessionId={}"\
+        -H "Authorization: Bearer {}" -H "Content-Type: application/json"'
 
-    if fallback_intent_count[session_id] > cfg.FALLBACK_LIMIT:
-        handover_curl = """
-        curl -X POST -H "Content-Type: application/json" -d '{{
-  "recipient":{{"id":"{}"}},
-  "target_app_id":263902037430900,
-  "metadata":"String to pass to secondary receiver app" 
-}}' "https://graph.facebook.com/v2.6/me/pass_thread_control?access_token={}"
-""".format(req['originalRequest']['data']['sender']['id'], cfg.FANPAGE_TOKEN)
-        print(handover_curl)
-        result = pycommon.execute_curl(handover_curl)
-        logging.warning("Fallback exceed maximum times, forward control to human:" + str(result))
-        fallback_intent_count.pop(session_id)
-
-    return req
+        replaced = s.format(v, req['sessionId'], cfg.DF_TOKEN)
+        print(replaced)
+        print(pycommon.execute_curl(replaced, json_out=False))
 
 
 def reset_content(req):
-    t = threading.Thread(target=invoke_reset_context, args=(req['sessionId'],))
+    t = threading.Thread(target=invoke_reset_context, args=(req,))
     t.daemon = True
     t.start()
     return req
@@ -77,21 +73,68 @@ def reset_content(req):
 
 # Mapping action trong DF với hàm của webhook
 action_resolve = {
-    'xoangucanh': reset_content,
-    'input.unknown': khong_hieu
+    'xoangucanh': reset_content
 }
+
+
+def set_to_current_old(session_id, list_context):
+    global current_contexts
+    if session_id in current_contexts:
+        print("Old :" + ";".join(list_context))
+    values = ';'.join(list_context)
+    current_contexts[session_id] = values
+
+
+def set_to_current(session_id, list_context):
+    global current_contexts
+    if session_id in current_contexts:
+        print("New :" + ";".join(list_context))
+    values = ';'.join(list_context)
+    current_contexts[session_id] = values
 
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     req = request.get_json(silent=True, force=True)
-    # print(req)
+    global current_contexts
+
+    if req['sessionId'] not in current_contexts:
+        print('cache ko co :'+req['sessionId'])
+    else:
+        print('cache co session id: ' + req['sessionId'] )
+
     actions = req['result']['action'].split(';')
 
     try:
+        hasActionXoangucanh = False
+        for action in actions:
+            if action == 'xoangucanh':
+                hasActionXoangucanh = True
+
+        print("hasActionXoangucanh: {}".format(hasActionXoangucanh))
+
+
+        if hasActionXoangucanh == False:
+            key = req['sessionId']
+            set_to_current_old(key, [x['name'] for x in req['result']['contexts']])
+
+            # hasActionXoangucanh = True
+        # if  hasActionXoangucanh:
+
         for action in actions:
             if action in action_resolve:
                 req = action_resolve[action](req)
+
+        if hasActionXoangucanh == True:
+            key = req['sessionId']
+            if key in current_contexts:
+                set_to_current(key, set([x['name'] for x in req['result']['contexts']]) - set(
+                    current_contexts[key].split(";")))
+            else:
+                set_to_current(key, set([x['name'] for x in req['result']['contexts']]))
+
+        print("Current Context: {}".format(current_contexts[req['sessionId']]))
+
     except:
         logging.error("Error when execute action:" + str(traceback.format_exc()))
 

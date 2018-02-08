@@ -15,6 +15,7 @@ class ChatbotConfig(ConfigBase):
     LogStashServerPort = None
     MaxThread = 20
     DF_TOKEN = None
+    FALLBACK_LIMIT = 4
 
 
 cfg = ChatbotConfig()

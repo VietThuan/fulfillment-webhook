@@ -40,7 +40,6 @@ lock = threading.RLock()
 def invoke_reset_context(req):
     if req['sessionId'] not in current_contexts:
         return
-    import time
     contextNames = current_contexts[req['sessionId']].split(";")
 
     if set([x['name'] for x in req['result']['contexts']]) == set(contextNames):
@@ -53,7 +52,7 @@ def invoke_reset_context(req):
     # time.sleep(1)
 
     for v in contextNames:
-        if len(v.strip())==0:
+        if len(v.strip()) == 0:
             continue
         s = 'curl -X DELETE \
         "https://api.dialogflow.com/v1/contexts/{}?timezone=Asia/Saigon&lang=en&sessionId={}"\
@@ -64,16 +63,48 @@ def invoke_reset_context(req):
         print(pycommon.execute_curl(replaced, json_out=False))
 
 
+fallback_intent_count = {}
+
+
+def khong_hieu(req):
+    logging.warning("Ko hieu")
+    session_id = req['sessionId']
+    if session_id not in fallback_intent_count:
+        fallback_intent_count[session_id] = 0
+    fallback_intent_count[session_id] = fallback_intent_count[session_id] + 1
+
+    if fallback_intent_count[session_id] > int(cfg.FALLBACK_LIMIT):
+        handover_curl = """
+        curl -X POST -H "Content-Type: application/json" -d '{{
+  "recipient":{{"id":"{}"}},
+  "target_app_id":263902037430900,
+  "metadata":"String to pass to secondary receiver app" 
+}}' "https://graph.facebook.com/v2.6/me/pass_thread_control?access_token={}"
+""".format(req['originalRequest']['data']['sender']['id'], cfg.FANPAGE_TOKEN)
+        print(handover_curl)
+        result = pycommon.execute_curl(handover_curl)
+        logging.warning("Fallback exceed maximum times, forward control to human:" + str(result))
+        fallback_intent_count.pop(session_id)
+
+    return req
+
+
 def reset_content(req):
     t = threading.Thread(target=invoke_reset_context, args=(req,))
     t.daemon = True
     t.start()
+
+    session_id = req['sessionId']
+    if session_id in fallback_intent_count:
+        fallback_intent_count.pop(session_id)
+
     return req
 
 
 # Mapping action trong DF với hàm của webhook
 action_resolve = {
-    'xoangucanh': reset_content
+    'xoangucanh': reset_content,
+    'input.unknown': khong_hieu
 }
 
 
@@ -99,9 +130,9 @@ def webhook():
     global current_contexts
 
     if req['sessionId'] not in current_contexts:
-        print('cache ko co :'+req['sessionId'])
+        print('cache ko co :' + req['sessionId'])
     else:
-        print('cache co session id: ' + req['sessionId'] )
+        print('cache co session id: ' + req['sessionId'])
 
     actions = req['result']['action'].split(';')
 

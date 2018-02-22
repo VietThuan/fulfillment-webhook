@@ -8,7 +8,7 @@ from flask import jsonify
 from config import ChatbotConfig
 from enums import getMsgType
 from facebook_messager_builder import MessageFactory
-from facebook_util import get_info, makeVietNameGender, isContainKey
+from facebook_util import get_info, makeVietNameGender, is_contain_key
 
 cfg = ChatbotConfig()
 
@@ -48,7 +48,7 @@ class SendMessageTask:
 
         # Lấy kết quả của thread đó để gửi cho người chat.
         for item in self.subject.result['messages']:
-            if not isContainKey("platform", item, 'facebook'):
+            if not is_contain_key("platform", item, 'facebook'):
                 continue
             dataJSON = MessageFactory().create_message(item['type'], self.senderId, item)
             res = requests.post(

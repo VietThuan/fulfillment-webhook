@@ -4,22 +4,21 @@
 from __future__ import print_function
 
 import logging
+import os
 import threading
 import traceback
 
 import pycommon
 from cachetools import TTLCache
+from flask import Flask, jsonify
+from flask import request
 from future.standard_library import install_aliases
 
 from config import ChatbotConfig
-from facebook_util import isContainKey
+from facebook_util import is_contain_key, is_conversation_in_inbox
 from waiting_process import SendMessageTask, GetGenderTask
 
 install_aliases()
-
-import os
-from flask import Flask, jsonify
-from flask import request
 
 app = Flask(__name__)
 
@@ -40,18 +39,15 @@ lock = threading.RLock()
 def invoke_reset_context(req):
     if req['sessionId'] not in current_contexts:
         return
-    contextNames = current_contexts[req['sessionId']].split(";")
+    context_names = current_contexts[req['sessionId']].split(";")
 
-    if set([x['name'] for x in req['result']['contexts']]) == set(contextNames):
+    if set([x['name'] for x in req['result']['contexts']]) == set(context_names):
         print("Bang nhau: {}".format(current_contexts[req['sessionId']]))
         return
 
     print("Contexts Delete: {}".format(current_contexts[req['sessionId']]))
-    # current_contexts.pop(session_id)
 
-    # time.sleep(1)
-
-    for v in contextNames:
+    for v in context_names:
         if len(v.strip()) == 0:
             continue
         s = 'curl -X DELETE \
@@ -66,20 +62,21 @@ def invoke_reset_context(req):
 fallback_intent_count = {}
 
 
-def khong_hieu(req):
+def khong_hieu(req, force=False):
     logging.warning("Ko hieu")
     session_id = req['sessionId']
     if session_id not in fallback_intent_count:
         fallback_intent_count[session_id] = 0
     fallback_intent_count[session_id] = fallback_intent_count[session_id] + 1
 
-    if fallback_intent_count[session_id] > int(cfg.FALLBACK_LIMIT):
+    if force or fallback_intent_count[session_id] > int(cfg.FALLBACK_LIMIT):
+        fallback_intent_count[session_id] = 0
         handover_curl = """
         curl -X POST -H "Content-Type: application/json" -d '{{
   "recipient":{{"id":"{}"}},
   "target_app_id":263902037430900,
   "metadata":"String to pass to secondary receiver app" 
-}}' "https://graph.facebook.com/v2.6/me/pass_thread_control?access_token={}"
+}}' "https://graph.facebook.com/v2.12/me/pass_thread_control?access_token={}"
 """.format(req['originalRequest']['data']['sender']['id'], cfg.FANPAGE_TOKEN)
         print(handover_curl)
         result = pycommon.execute_curl(handover_curl)
@@ -137,26 +134,22 @@ def webhook():
     actions = req['result']['action'].split(';')
 
     try:
-        hasActionXoangucanh = False
+        has_action_xoa_ngu_canh = False
         for action in actions:
             if action == 'xoangucanh':
-                hasActionXoangucanh = True
+                has_action_xoa_ngu_canh = True
 
-        print("hasActionXoangucanh: {}".format(hasActionXoangucanh))
+        print("has_action_xoa_ngu_canh: {}".format(has_action_xoa_ngu_canh))
 
-
-        if hasActionXoangucanh == False:
+        if not has_action_xoa_ngu_canh:
             key = req['sessionId']
             set_to_current_old(key, [x['name'] for x in req['result']['contexts']])
-
-            # hasActionXoangucanh = True
-        # if  hasActionXoangucanh:
 
         for action in actions:
             if action in action_resolve:
                 req = action_resolve[action](req)
 
-        if hasActionXoangucanh == True:
+        if has_action_xoa_ngu_canh:
             key = req['sessionId']
             if key in current_contexts:
                 set_to_current(key, set([x['name'] for x in req['result']['contexts']]) - set(
@@ -170,21 +163,25 @@ def webhook():
         logging.error("Error when execute action:" + str(traceback.format_exc()))
 
     # Chỉ xử lý câu trả lời cho hội thoại trên facebook
-    if not isContainKey("originalRequest;source", req, "facebook"):
+    if not is_contain_key("originalRequest;source", req, "facebook"):
         return jsonify({})
 
-    senderID = None
+    sender_id = None
     for item in req["result"]["contexts"]:
         try:
-            senderID = item["parameters"]["facebook_sender_id"]
+            sender_id = item["parameters"]["facebook_sender_id"]
             break
         except:
             pass
-    if senderID is None:
+    if sender_id is None:
         logging.error("facebook_sender_id not found in parameters, req: " + str(req))
         return jsonify({})
 
-    return SendMessageTask(GetGenderTask(req, senderID), senderID).run()
+    if is_conversation_in_inbox(sender_id):
+        # nếu conversation đang trong inbox thì không trả lời và coi như không hiểu
+        khong_hieu(req, force=True)
+
+    return SendMessageTask(GetGenderTask(req, sender_id), sender_id).run()
 
 
 if __name__ == '__main__':

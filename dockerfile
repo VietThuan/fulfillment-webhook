@@ -13,8 +13,4 @@ RUN pip3 install --upgrade pip
 COPY ./requirements.txt /
 RUN pip3 install -r /requirements.txt
 
-
-# install nano
-RUN ["apt-get", "install", "-y", "nano"]
-
 ENTRYPOINT  cd /code/ && python3 app.py

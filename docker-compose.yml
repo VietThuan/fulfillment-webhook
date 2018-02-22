@@ -45,10 +45,11 @@ services:
       - /opt/projects/fulfillment-webhook/:/code/
     stdin_open: true
     environment:
-      FANPAGE_TOKEN : EAACOckRmINgBAHGCb3ZB9HwW37M8nPyiQ1nLjFhaB93QFOdcS7aTTxrIDktt7VLAVNYLZBQryroF0nidp4VzZA7t3RuEmLnUmkwqDwcb47JBYCAUPsOElTGwA1N0n3iT2fL67hbNZAtU1jB0QAQbu95D6XwDnoRed5b8UA8kUwZDZD
+      FANPAGE_TOKEN : EAAEsmcY7SkgBACrQH5b8dvZBVwqMZBeWIVN8hVQVgZCLLftdu6Gjq7ZAZCKKf1Nfn3YZAoErGYn4TmH4xA7Wv6s2X52ERqNxGjAMUAICFJ4pomdAS28GlGYl8ZA059ocwaDsEimBWfWuYYzsZA8ULRgVfpMMVKrNuFI787pRozYIvTjeyiW5gtLWgBYGkvAEAuEZD
     tty: true
     restart: always
     ports:
       - 8904:5000
+      - 5000:5000
     container_name: "htkh-bot-sme"
 

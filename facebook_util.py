@@ -62,7 +62,7 @@ def is_conversation_in_inbox(sender_id):
         return len(obj['data']) > 0
     except Exception as ex:
         logging.error("Error one get_info:" + traceback.format_exc())
-        raise ex
+        return False
 
 
 with lock:

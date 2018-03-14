@@ -41,9 +41,9 @@ def invoke_reset_context(req):
         return
     context_names = current_contexts[req['sessionId']].split(";")
 
-    if set([x['name'] for x in req['result']['contexts']]) == set(context_names):
-        print("Bang nhau: {}".format(current_contexts[req['sessionId']]))
-        return
+    # if set([x['name'] for x in req['result']['contexts']]) == set(context_names):
+    #     print("Bang nhau: {}".format(current_contexts[req['sessionId']]))
+    #     return
 
     print("Contexts Delete: {}".format(current_contexts[req['sessionId']]))
 

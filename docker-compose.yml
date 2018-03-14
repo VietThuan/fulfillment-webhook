@@ -12,32 +12,32 @@ services:
 #    ports:
 #      - 8901:5000
 #    container_name: "research-bot"
-
-  website-misa-bot:
-    build: .
-    volumes:
-      - /opt/projects/fulfillment-webhook/:/code/
-    stdin_open: true
-    environment:
-      FANPAGE_TOKEN : EAAFCFHCMLPwBAM4KI61M2TsZB8y1sjCdNUnloayHb5qzSydjHoOmL46RpWh4Nr2wNboA1pQv2xOX6nsZB3clZCiC2ZCkq2GZBdr5mVDRhmtDUBbrYp2JOwdDYeb0a9E5JphsweZCRZAGHb9H6mXf7wh98GMFHNpI2QwdjypUkU2Q9vEwXD3eVcC
-    tty: true
-    restart: always
-    ports:
-      - 8902:5000
-    container_name: "website-misa-bot"
-
-  htkh-bot:
-    build: .
-    volumes:
-      - /opt/projects/fulfillment-webhook/:/code/
-    stdin_open: true
-    environment:
-      FANPAGE_TOKEN : EAAVSHCiVN4sBALg8cd4bfvZAhQoMEEHK9UFNhwHJK9xPadSq7ZBrcGLB0BN2i7PW9bS3PRxUgVFD6D4hJhXXrJu7xml9kNkjZCgkuzcRMohzmoH5v53k6gAOwsqctfz0fxumxAt4eoZAkZA1HrEo75cp3J0ZBzuaXepU0odjaHZCBdIs8CGOyet
-    tty: true
-    restart: always
-    ports:
-      - 8903:5000
-    container_name: "htkh-bot"
+#
+#  website-misa-bot:
+#    build: .
+#    volumes:
+#      - /opt/projects/fulfillment-webhook/:/code/
+#    stdin_open: true
+#    environment:
+#      FANPAGE_TOKEN : EAAFCFHCMLPwBAM4KI61M2TsZB8y1sjCdNUnloayHb5qzSydjHoOmL46RpWh4Nr2wNboA1pQv2xOX6nsZB3clZCiC2ZCkq2GZBdr5mVDRhmtDUBbrYp2JOwdDYeb0a9E5JphsweZCRZAGHb9H6mXf7wh98GMFHNpI2QwdjypUkU2Q9vEwXD3eVcC
+#    tty: true
+#    restart: always
+#    ports:
+#      - 8902:5000
+#    container_name: "website-misa-bot"
+#
+#  htkh-bot:
+#    build: .
+#    volumes:
+#      - /opt/projects/fulfillment-webhook/:/code/
+#    stdin_open: true
+#    environment:
+#      FANPAGE_TOKEN : EAAVSHCiVN4sBALg8cd4bfvZAhQoMEEHK9UFNhwHJK9xPadSq7ZBrcGLB0BN2i7PW9bS3PRxUgVFD6D4hJhXXrJu7xml9kNkjZCgkuzcRMohzmoH5v53k6gAOwsqctfz0fxumxAt4eoZAkZA1HrEo75cp3J0ZBzuaXepU0odjaHZCBdIs8CGOyet
+#    tty: true
+#    restart: always
+#    ports:
+#      - 8903:5000
+#    container_name: "htkh-bot"
 
   htkh-bot-sme:
     build: .
@@ -50,6 +50,5 @@ services:
     restart: always
     ports:
       - 8904:5000
-      - 5000:5000
     container_name: "htkh-bot-sme"
 

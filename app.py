@@ -170,6 +170,6 @@ def webhook():
 
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 8901))
+    port = int(os.getenv('PORT', 5000))
     logging.debug("Starting app on port %d" % port)
     app.run(debug=False, port=port, host='0.0.0.0', threaded=True)

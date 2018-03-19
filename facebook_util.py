@@ -56,7 +56,7 @@ def is_conversation_in_inbox(sender_id):
         obj = json.loads(response)
         return len(obj['data']) > 0
     except Exception:
-        logging.error("Error one get_info, sender_id[{}] response[{}] traceback[{}]".format(sender_id, response,
+        logging.warning("Error one get_info, sender_id[{}] response[{}] traceback[{}]".format(sender_id, response,
                                                                                             traceback.format_exc()))
         return False
 

@@ -15,7 +15,6 @@ from flask import Flask, jsonify
 from flask import request
 from future.standard_library import install_aliases
 
-import os
 print(os.environ)
 
 import util
@@ -63,7 +62,7 @@ def handover(req, force=False):
         """.format(util.get_sender_id(req), cfg.FanpageToken)
 
         logging.debug('Execute handover curl[{}] result[{}]'.
-                      format(handover_curl, cow.execute_curl(handover_curl, json_out=False)))
+                      format(util.hide_token(handover_curl), cow.execute_curl(handover_curl, json_out=False)))
 
         fallback_intent_count.pop(session_id)
 
@@ -88,7 +87,7 @@ def reset_context(req):
             replaced = s.format(v, req['sessionId'], cfg.DFClientToken)
 
             logging.debug(
-                'Reset context curl[{}] result[{}]'.format(replaced, cow.execute_curl(replaced, json_out=False)))
+                'Reset context curl[{}] result[{}]'.format(util.hide_token(replaced), cow.execute_curl(replaced, json_out=False)))
 
     t = threading.Thread(target=invoke_reset_context, args=(req,))
     t.daemon = True

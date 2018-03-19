@@ -1,5 +1,16 @@
+from config import ChatbotConfig
+
+cfg = ChatbotConfig()
+
+token_hash = cfg.DFClientToken[0:4] + '***' + cfg.DFClientToken[-4:]
+
+
 def get_sender_id(req):
     return req['originalRequest']['data']['sender']['id']
+
+
+def hide_token(str):
+    return str.replace(cfg.DFClientToken, token_hash)
 
 
 def get_facebook_sender_id(req):

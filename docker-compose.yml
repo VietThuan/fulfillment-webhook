@@ -10,27 +10,31 @@ services:
     environment:
       FanpageToken : EAAEsmcY7SkgBACrQH5b8dvZBVwqMZBeWIVN8hVQVgZCLLftdu6Gjq7ZAZCKKf1Nfn3YZAoErGYn4TmH4xA7Wv6s2X52ERqNxGjAMUAICFJ4pomdAS28GlGYl8ZA059ocwaDsEimBWfWuYYzsZA8ULRgVfpMMVKrNuFI787pRozYIvTjeyiW5gtLWgBYGkvAEAuEZD
       DFClientToken : dff9b6906ff94bed830a10697ec4e658
+
+      #cukcuk_goimon và bot của nbhoa
+      #FanpageToken : EAAEsmcY7SkgBACrQH5b8dvZBVwqMZBeWIVN8hVQVgZCLLftdu6Gjq7ZAZCKKf1Nfn3YZAoErGYn4TmH4xA7Wv6s2X52ERqNxGjAMUAICFJ4pomdAS28GlGYl8ZA059ocwaDsEimBWfWuYYzsZA8ULRgVfpMMVKrNuFI787pRozYIvTjeyiW5gtLWgBYGkvAEAuEZD
+      #DFClientToken : dff9b6906ff94bed830a10697ec4e658
     tty: true
     restart: always
     ports:
       - 8904:5000
     container_name: "htkh-bot-sme"
 
-  htkh-bot-mimosa:
-    build: .
-    volumes:
-      - /opt/projects/fulfillment-webhook/:/code/
-    stdin_open: true
-    env_file:
-      - /opt/projects/fulfillment-webhook/config.env
-    environment:
-      FanpageToken : EAAEsmcY7SkgBACrQH5b8dvZBVwqMZBeWIVN8hVQVgZCLLftdu6Gjq7ZAZCKKf1Nfn3YZAoErGYn4TmH4xA7Wv6s2X52ERqNxGjAMUAICFJ4pomdAS28GlGYl8ZA059ocwaDsEimBWfWuYYzsZA8ULRgVfpMMVKrNuFI787pRozYIvTjeyiW5gtLWgBYGkvAEAuEZD
-      DFClientToken : dff9b6906ff94bed830a10697ec4e658
-    tty: true
-    restart: always
-    ports:
-      - 8900:5000
-    container_name: "htkh-bot-mimosa"
+#  htkh-bot-mimosa:
+#    build: .
+#    volumes:
+#      - /opt/projects/fulfillment-webhook/:/code/
+#    stdin_open: true
+#    env_file:
+#      - /opt/projects/fulfillment-webhook/config.env
+#    environment:
+#      FanpageToken : EAAEsmcY7SkgBACrQH5b8dvZBVwqMZBeWIVN8hVQVgZCLLftdu6Gjq7ZAZCKKf1Nfn3YZAoErGYn4TmH4xA7Wv6s2X52ERqNxGjAMUAICFJ4pomdAS28GlGYl8ZA059ocwaDsEimBWfWuYYzsZA8ULRgVfpMMVKrNuFI787pRozYIvTjeyiW5gtLWgBYGkvAEAuEZD
+#      DFClientToken : dff9b6906ff94bed830a10697ec4e658
+#    tty: true
+#    restart: always
+#    ports:
+#      - 8900:5000
+#    container_name: "htkh-bot-mimosa"
 
   htkh-bot-cukcuk:
     build: .

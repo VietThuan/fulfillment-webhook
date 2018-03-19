@@ -14,11 +14,11 @@ class MessagesTitle():
 
 
 def getMsgType(item):
-    msg_Type = ''
+    msg_type = ''
     if item['type'] == MessagesType.TEXTRESPORSE.value:
-        msg_Type = MessagesTitle.TEXTRESPORSE
+        msg_type = MessagesTitle.TEXTRESPORSE
     if item['type'] == MessagesType.QUICKREPLY.value:
-        msg_Type = MessagesTitle.QUICKREPLY
+        msg_type = MessagesTitle.QUICKREPLY
     if item['type'] == MessagesType.CARD.value:
-        msg_Type = MessagesTitle.CARD
-    return msg_Type
+        msg_type = MessagesTitle.CARD
+    return msg_type

@@ -1,19 +1,23 @@
 import json
 
-import pycommon.patterns
+import cow.patterns
 
 from enums import MessagesType, getMsgType
 
 
-# Tạo câu trả lời cho facebook thông qua graph API
-@pycommon.patterns.singleton
+@cow.patterns.singleton
 class MessageFactory:
-    def __init__(self):
-        self.dic = {MessagesType.TEXTRESPORSE.value: self._create_text,
-                    MessagesType.QUICKREPLY.value: self._create_quick,
-                    MessagesType.CARD.value: self._create_card, }
+    """
+    Tạo câu trả lời cho facebook thông qua graph API
+    """
 
-    def _create_quick(self, sender_id, item):
+    def __init__(self):
+        self.dic = {MessagesType.TEXTRESPORSE.value: MessageFactory._create_text,
+                    MessagesType.QUICKREPLY.value: MessageFactory._create_quick,
+                    MessagesType.CARD.value: MessageFactory._create_card, }
+
+    @classmethod
+    def _create_quick(cls, sender_id, item):
         data_obj = {
             "recipient": {"id": sender_id},
             "message": {
@@ -26,7 +30,8 @@ class MessageFactory:
 
         return json.dumps(data_obj)
 
-    def _create_card(self, sender_id, item):
+    @classmethod
+    def _create_card(cls, sender_id, item):
         data_obj = {
             "recipient": {"id": sender_id},
             "message": {
@@ -51,7 +56,8 @@ class MessageFactory:
                 {"type": "web_url", "url": v['postback'], "title": v['text']})
         return json.dumps(data_obj)
 
-    def _create_text(self, sender_id, item):
+    @classmethod
+    def _create_text(cls, sender_id, item):
         return json.dumps({
             "recipient": {"id": sender_id},
             "message": {"text": item[getMsgType(item)]}

@@ -13,55 +13,51 @@ from config import ChatbotConfig
 cfg = ChatbotConfig()
 
 # Tạo cache
-cache = TTLCache(maxsize=int(cfg.CACHE_MAXSIZE), ttl=int(cfg.CACHE_TTL))
+cache = TTLCache(maxsize=int(cfg.CacheMaxsize), ttl=int(cfg.CacheTTL))
 lock = RLock()
 
 
-# Kiểm tra key có tồn tại trong dic hay không
-def is_contain_key(data, dic, value):
-    datas = data.split(";")
-    for item in datas:
-        if item not in dic:
-            return False
-        else:
-            dic = dic.get(item)
-    if value != "" and value != dic:
-        return False
-    return True
-
-
-# Lấy thông tin của Facebook theo senderID
 @cached(cache, lock=lock)
-def get_info(id):
+def get_facebook_sender_id(id):
+    """
+    Lấy thông tin của Facebook theo senderID
+    :param id: facebook sender id
+    :return:
+    """
+    response = ''
     try:
-        print("Get Facebook info {}".format(id))
+        logging.debug("Get Facebook info id[{}]".format(id))
         fields = 'first_name,last_name,gender'
         conn = http.client.HTTPSConnection("graph.facebook.com")
-        conn.request("GET", "/v2.11/{}?fields={}&access_token={}".format(id, fields, cfg.FANPAGE_TOKEN))
+        conn.request("GET", "/v2.11/{}?fields={}&access_token={}".format(id, fields, cfg.FanpageToken))
 
         res = conn.getresponse()
         data = res.read()
+        response = data.decode("utf-8")
 
-        obj = json.loads(data.decode("utf-8"))
+        obj = json.loads(response)
         return obj
     except Exception as ex:
-        logging.error("Error one get_info:" + traceback.format_exc())
+        logging.error("Error one get_facebook_sender_id, id[{}] response[{}] traceback[{}]"
+                      .format(id, response, traceback.format_exc()))
         raise ex
 
 
 def is_conversation_in_inbox(sender_id):
+    response = ''
     try:
         print("Check conversation in inbox sender_id[{}]".format(sender_id))
         conn = http.client.HTTPSConnection("graph.facebook.com")
-        conn.request("GET", "/v2.12/{}/conversations?access_token={}".format(sender_id, cfg.FANPAGE_TOKEN))
+        conn.request("GET", "/v2.12/{}/conversations?access_token={}".format(sender_id, cfg.FanpageToken))
 
         res = conn.getresponse()
         data = res.read()
-
-        obj = json.loads(data.decode("utf-8"))
+        response = data.decode("utf-8")
+        obj = json.loads(response)
         return len(obj['data']) > 0
-    except Exception as ex:
-        logging.error("Error one get_info:" + traceback.format_exc())
+    except Exception:
+        logging.error("Error one get_info, sender_id[{}] response[{}] traceback[{}]".format(sender_id, response,
+                                                                                            traceback.format_exc()))
         return False
 
 
@@ -70,14 +66,14 @@ with lock:
 
 
 # Tạo tên xưng hô từ giới tính lấy được từ Facebook
-def makeVietNameGender(value, isUpper):
+def make_viet_name_gender(value, is_upper):
     if value == "male":
-        if isUpper == True:
+        if is_upper:
             return "Anh"
         else:
             return "anh"
     elif value == "female":
-        if isUpper == True:
+        if is_upper:
             return "Chị"
         else:
             return "chị"

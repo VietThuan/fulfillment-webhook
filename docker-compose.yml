@@ -1,54 +1,50 @@
 version: '3'
 services:
-#  research-bot:
-#    build: .
-#    volumes:
-#      - /opt/projects/fulfillment-webhook/:/code/
-#    stdin_open: true
-#    environment:
-#      FANPAGE_TOKEN : EAAFCFHCMLPwBABWdKcc5SN2Sovd273Cwc59m0iFKJ8dQzlXvctph3RHUAfI93T3mPky5zpuqZALfjdmFQXjairTjeg20wOYxWFiH94mPraQ15O7KPZB7dqJRGgJYvE6leSuXJcvsFPrIHPbJsekIkZAouBlMJUrkSaCCMGykg7WRvsS7UO3
-#    tty: true
-#    restart: always
-#    ports:
-#      - 8901:5000
-#    container_name: "research-bot"
-#
-#  website-misa-bot:
-#    build: .
-#    volumes:
-#      - /opt/projects/fulfillment-webhook/:/code/
-#    stdin_open: true
-#    environment:
-#      FANPAGE_TOKEN : EAAFCFHCMLPwBAM4KI61M2TsZB8y1sjCdNUnloayHb5qzSydjHoOmL46RpWh4Nr2wNboA1pQv2xOX6nsZB3clZCiC2ZCkq2GZBdr5mVDRhmtDUBbrYp2JOwdDYeb0a9E5JphsweZCRZAGHb9H6mXf7wh98GMFHNpI2QwdjypUkU2Q9vEwXD3eVcC
-#    tty: true
-#    restart: always
-#    ports:
-#      - 8902:5000
-#    container_name: "website-misa-bot"
-#
-#  htkh-bot:
-#    build: .
-#    volumes:
-#      - /opt/projects/fulfillment-webhook/:/code/
-#    stdin_open: true
-#    environment:
-#      FANPAGE_TOKEN : EAAVSHCiVN4sBALg8cd4bfvZAhQoMEEHK9UFNhwHJK9xPadSq7ZBrcGLB0BN2i7PW9bS3PRxUgVFD6D4hJhXXrJu7xml9kNkjZCgkuzcRMohzmoH5v53k6gAOwsqctfz0fxumxAt4eoZAkZA1HrEo75cp3J0ZBzuaXepU0odjaHZCBdIs8CGOyet
-#    tty: true
-#    restart: always
-#    ports:
-#      - 8903:5000
-#    container_name: "htkh-bot"
-
   htkh-bot-sme:
     build: .
     volumes:
       - /opt/projects/fulfillment-webhook/:/code/
     stdin_open: true
+    env_file:
+      - /opt/projects/fulfillment-webhook/config.env
     environment:
-      FANPAGE_TOKEN : EAAEsmcY7SkgBACrQH5b8dvZBVwqMZBeWIVN8hVQVgZCLLftdu6Gjq7ZAZCKKf1Nfn3YZAoErGYn4TmH4xA7Wv6s2X52ERqNxGjAMUAICFJ4pomdAS28GlGYl8ZA059ocwaDsEimBWfWuYYzsZA8ULRgVfpMMVKrNuFI787pRozYIvTjeyiW5gtLWgBYGkvAEAuEZD
+      FanpageToken : EAAEsmcY7SkgBACrQH5b8dvZBVwqMZBeWIVN8hVQVgZCLLftdu6Gjq7ZAZCKKf1Nfn3YZAoErGYn4TmH4xA7Wv6s2X52ERqNxGjAMUAICFJ4pomdAS28GlGYl8ZA059ocwaDsEimBWfWuYYzsZA8ULRgVfpMMVKrNuFI787pRozYIvTjeyiW5gtLWgBYGkvAEAuEZD
+      DFClientToken : dff9b6906ff94bed830a10697ec4e658
     tty: true
     restart: always
     ports:
       - 8904:5000
     container_name: "htkh-bot-sme"
+
+  htkh-bot-mimosa:
+    build: .
+    volumes:
+      - /opt/projects/fulfillment-webhook/:/code/
+    stdin_open: true
+    env_file:
+      - /opt/projects/fulfillment-webhook/config.env
+    environment:
+      FanpageToken : EAAEsmcY7SkgBACrQH5b8dvZBVwqMZBeWIVN8hVQVgZCLLftdu6Gjq7ZAZCKKf1Nfn3YZAoErGYn4TmH4xA7Wv6s2X52ERqNxGjAMUAICFJ4pomdAS28GlGYl8ZA059ocwaDsEimBWfWuYYzsZA8ULRgVfpMMVKrNuFI787pRozYIvTjeyiW5gtLWgBYGkvAEAuEZD
+      DFClientToken : dff9b6906ff94bed830a10697ec4e658
+    tty: true
+    restart: always
+    ports:
+      - 8900:5000
+    container_name: "htkh-bot-mimosa"
+
+  htkh-bot-cukcuk:
+    build: .
+    volumes:
+      - /opt/projects/fulfillment-webhook/:/code/
+    env_file:
+      - /opt/projects/fulfillment-webhook/config.env
+    stdin_open: true
+    environment:
+      FanpageToken : EAACPPDsQaS0BAExsREUHTkstZBZArAzIl2j1maWqp1rA7UZCrV1H02tzaprt9VfU4zy6KUdB7J1Bf7gyF0hkEphFAdYKq3PWEtiZBmEOO7ZAGjpH1LifSYiYiczJnpQoggSMyMQSQb0ZAlAc7bdB0MaijYoqpDW74C9nYzrAP7UwZDZD
+      DFClientToken : 22687af5bfdf43f5aa347846f59b4c72
+    tty: true
+    restart: always
+    ports:
+      - 8901:5000
+    container_name: "htkh-bot-cukcuk"
 

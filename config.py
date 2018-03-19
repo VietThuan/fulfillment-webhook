@@ -1,23 +1,25 @@
-import pycommon.patterns
-from pycommon import ConfigBase
+import logging
+
+import cow.patterns
+from cow import ConfigBase
 
 
-@pycommon.patterns.singleton
+@cow.patterns.singleton
 class ChatbotConfig(ConfigBase):
-    FANPAGE_TOKEN = None
-    GENDER_U = None
-    GENDER_L = None
-    THREAD_TIMEOUT = None
-    CACHE_MAXSIZE = None
-    CACHE_TTL = None
-    LogPath = None
-    LogStashServerEndpoint = None
-    LogStashServerPort = None
+    FanpageToken = 'EAACPPDsQaS0BAExsREUHTkstZBZArAzIl2j1maWqp1rA7UZCrV1H02tzaprt9VfU4zy6KUdB7J1Bf7gyF0hkEphFAdYKq3PWEtiZBmEOO7ZAGjpH1LifSYiYiczJnpQoggSMyMQSQb0ZAlAc7bdB0MaijYoqpDW74C9nYzrAP7UwZDZD'
+    GenderUpper = 'Anh/Chị;Anh/Chi;Anh/chi;Anh/chị;anh/Chi;anh/Chị'
+    GenderLower = 'anh/chị;anh/chi'
+    ThreadTimeout = 4
+    CacheMaxsize = 1000
+    CacheTTL = 1800
+    LogStashServerEndpoint = '117.6.16.176'
+    LogStashServerPort = 91
     MaxThread = 20
-    DF_TOKEN = None
-    FALLBACK_LIMIT = 4
+    DFClientToken = 'dff9b6906ff94bed830a10697ec4e658'
+    FallbackLimit = 4
 
 
 cfg = ChatbotConfig()
-cfg.merge_file(pycommon.get_callee_path() + "/config.ini")
 cfg.merge_env()
+
+logging.warning('Start config:' + str(cfg))
